@@ -120,3 +120,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#Preliminary query StackOverflow
+SO_CUSTOM_FILTER = "https://api.stackexchange.com/2.2/search?pagesize=10&order=desc&sort=votes&intitle=%(query)s&site=stackoverflow&filter=!7qo*q3uhfvKYy)_leWcoHoK6i-fqy9wSP9"
