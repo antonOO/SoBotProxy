@@ -122,4 +122,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 #Preliminary query StackOverflow
-SO_CUSTOM_FILTER = "https://api.stackexchange.com/2.2/search?pagesize=10&order=desc&sort=votes&intitle=%(query)s&site=stackoverflow&filter=!7qo*q3uhfvKYy)_leWcoHoK6i-fqy9wSP9"
+#SO_CUSTOM_FILTER = "https://api.stackexchange.com/2.2/search?pagesize=10&order=desc&sort=votes&tagged=%(query)s&site=stackoverflow&filter=!7qo*q3uhfvKYy)_leWcoHoK6i-fqy9wSP9"
+SO_CUSTOM_FILTER = "https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=votes&tagged=%(query)s&site=stackoverflow&filter=!BLtFdlgN1z2OoCXlXTyTAvJuybpOSy"
