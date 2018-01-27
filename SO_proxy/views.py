@@ -20,8 +20,10 @@ def split_to_passages(text):
     passages.append(text.splitlines())
     return passages '''
 
-def get_search_data(programming_terms):
-    url_query = (settings.SO_CUSTOM_FILTER % {"query" : programming_terms})
+def get_search_data(search_query, programming_terms, intitle = ""):
+    print(search_query + "\n")
+    url_query = (search_query % {"tags" : programming_terms, "intitle" : intitle})
+    print(url_query  + "\n")
     response = requests.get(url_query)
     return json.loads(response.text)
 
@@ -43,12 +45,13 @@ def get_answer(request):
 
     print(str(entities))
 
-    similarity_terms = " ".join(entity[0] for entity in entities)
+    similarity_terms = " ".join(word for word in question)
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
-    json_search_data = get_search_data(programming_terms)
 
-    question_string = "Cannot find question ..."
-    answer_string = "Cannot find an answer ..."
+    #Query SO for similar information to the question.
+    json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, question)
+    if len(json_search_data["items"]) == 0:
+        return HttpResponse("Cannot find an answer ...")
 
     max_score = 0
 

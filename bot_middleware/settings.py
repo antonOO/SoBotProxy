@@ -121,6 +121,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-#Preliminary query StackOverflow
-#SO_CUSTOM_FILTER = "https://api.stackexchange.com/2.2/search?pagesize=10&order=desc&sort=votes&tagged=%(query)s&site=stackoverflow&filter=!7qo*q3uhfvKYy)_leWcoHoK6i-fqy9wSP9"
-SO_CUSTOM_FILTER = "https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=votes&tagged=%(query)s&site=stackoverflow&filter=!BLtFdlgN1z2OoCXlXTyTAvJuybpOSy"
+#Queries StackOverflow
+AT_LEAST_ONE_TAG_AND_INTITLE_FILTER= "https://api.stackexchange.com//2.2/search?pagesize=100&order=desc&sort=activity&tagged=%(tags)s&intitle=%(intitle)s&site=stackoverflow&filter=!)5__yhuriMxCPxpOvE.1fkRjrfXv"
+MULTIPLE_TAGS_FILTER = "https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=votes&tagged=%(tags)s&site=stackoverflow&filter=!BLtFdlgN1z2OoCXlXTyTAvJuybpOSy"
+SIMILAR_QUESTION_FILTER  = "https://api.stackexchange.com/2.2/similar?pagesize=100&order=desc&sort=relevance&tagged=%(tags)s&title=%(intitle)s&site=stackoverflow&filter=!)5cCAfQ89FJ*hTGUy)0qNg)rgS6L"
