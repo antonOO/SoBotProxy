@@ -2,6 +2,7 @@ from django.shortcuts import render
 import requests
 import re
 import json
+from django.http import JsonResponse
 from gensim.summarization.bm25 import BM25
 from gensim import corpora
 from django.http import HttpResponse
@@ -103,7 +104,14 @@ def get_bm25_combined(question_corpora, query_doc):
 
 
 '''
-Compute
+Sort the array of documents
+based on their BM25 score
+
+params = the array of bm25 scores,
+         the document corpora array
+
+return = the sorted document
+         corpora array
 '''
 def get_relevancy_sorted_docs(rankings, documents):
     print(max(rankings))
@@ -150,8 +158,13 @@ def get_answer(request):
 
     ''' '''
     json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
+    print(len(json_search_data['items']))
     if len(json_search_data['items']) == 0:
-        return HttpResponse("['Cannot find an answer ...']")
+        json_answer_response = {
+                                'passages' : "['Cannot find and answer']",
+                                'query'    : str(generic_query)
+        }
+        return JsonResponse(json_answer_response)
 
     max_score = 0
 
@@ -161,6 +174,8 @@ def get_answer(request):
     for item in json_search_data['items']:
         if "answers" in item and len(item['answers']) > 0:
             question_corpora.append(item)
+
+
                                                  #question
     scores = get_bm25_combined(question_corpora, generic_query)
     print(scores)
@@ -169,4 +184,13 @@ def get_answer(request):
     print([doc["title"] for doc in relevant_docs])
     passages = extract_possible_answers(relevant_docs, num_answers)
 
-    return HttpResponse(str(passages))
+    json_answer_response = {
+                            'passages' : str(passages),
+                            'query'    : str(generic_query)
+    }
+
+    return JsonResponse(json_answer_response)
+
+
+def update_training_data(request):
+    return HttpResponse("Successfully updated")

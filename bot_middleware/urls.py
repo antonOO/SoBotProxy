@@ -20,4 +20,5 @@ from SO_proxy import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^answer/$', views.get_answer, name='get_answer'),
+    url(r'^update_training_data/$', views.update_training_data, name='update_training_data'),
 ]
