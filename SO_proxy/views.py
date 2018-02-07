@@ -192,5 +192,9 @@ def get_answer(request):
     return JsonResponse(json_answer_response)
 
 
-def update_training_data(request):
-    return HttpResponse("Successfully updated")
+def update_training_data_negative(request):
+    message = request.GET.get('answer')
+    return HttpResponse(message)
+
+def update_training_data_positive(request):
+    return HttpResponse("Successfully updated positive!")
