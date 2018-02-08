@@ -1,10 +1,10 @@
 def extract_possible_answers(relevant_docs, num_answers):
     passages = []
     for doc in relevant_docs:
-        for answer in doc["answers"]:
+        for answer in doc['answers']:
             if len(passages) == num_answers:
                 return passages
-            passages.append(answer["body"])
+            passages.append((answer['body'], doc['link']))
 
     #shuffle(passages)
     return passages

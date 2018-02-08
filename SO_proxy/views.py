@@ -149,8 +149,20 @@ def get_answer(request):
         answers from the most relevant questions are
         first in the array.
     '''
-                                                 #question
     scores = get_bm25_combined(question_corpora, generic_query)
+    question_scores = get_bm25_combined(question_corpora, question)
+
+    '''
+        There might be more similar documents to the
+        exact question itself, rather than the
+        generic query.
+    '''
+    '''
+    if max(question_scores) > max(scores):
+        scores = question_scores
+        generic_query = question
+    '''
+
     relevant_docs = get_relevancy_sorted_docs(scores, question_corpora); print([doc["title"] for doc in relevant_docs])
     passages = extract_possible_answers(relevant_docs, num_answers)
 
@@ -163,7 +175,7 @@ def get_answer(request):
 
 
 def update_training_data_negative(request):
-    message = request.GET.get('answer')
+    message = request.GET.get('query')
     return HttpResponse(message)
 
 def update_training_data_positive(request):
