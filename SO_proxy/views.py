@@ -9,37 +9,19 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 from random import shuffle
-
-
-'''
+from .answer_processor import *
 
 '''
-def split_to_passages(text):
-    '''passages = []
-    while(True):
-        m = re.search('<code>(.+?)</code>', text)
-        if m:
-            passages.append(m.group(1))
-            text = text.replace(m.group(1), "")
-        else:
-            break
-    passages.append(text.splitlines())'''
-    passages = []
-    passages.append(text)
-    return passages
+    Get the search data from SO
 
+    params = specific search url (custom filter
+             as defined in SO) String, array of
+             Strings indicating tags -
+             programming terms, a String value
+             which appears in the retreaved
+             answers
 
-'''
-Get the search data from SO
-
-params = specific search url (custom filter
-         as defined in SO) String, array of
-         Strings indicating tags -
-         programming terms, a String value
-         which appears in the retreaved
-         answers
-
-return = data from SO
+    return = data from SO
 '''
 def get_search_data(search_query, programming_terms, intitle = ""):
     url_query = (search_query % {"tags" : programming_terms, "intitle" : intitle})
@@ -48,34 +30,48 @@ def get_search_data(search_query, programming_terms, intitle = ""):
     return json.loads(response.text)
 
 '''
-Remove unwanted symbols
-returned by SO
+    Remove unwanted symbols
+    returned by SO
 
-params = String text
+    params = String text
 
-return = stripped text
+    return = stripped text
 '''
 def strip_text(text):
     text = text.lower()
     text = re.sub('&.{3,6};', "", text)
     return re.sub('[^0-9a-zA-Z ]+', "", text)
 
+'''
+    Check if ML extracted entities
+    match coherently the question
+
+    params = list String ents,
+             question
+
+    return = boolean flag
+'''
+def are_entities_legitimate(entities, question):
+    for entity in entities:
+        if not (entity[0] in question):
+            return False
+    return True
 
 '''
-Get bm25 rankings between a SO
-question and a query, depending
-on a question corpora
+    Get bm25 rankings between a SO
+    question and a query, depending
+    on a question corpora
 
-params = question corpora - array
-        of tokenized docs, query
-        String, question part
-        indicating whether it is
-        the question title or body
+    params = question corpora - array
+            of SO tokenized docs, query
+            String, question part
+            indicating whether it is
+            the question title or body
 
-return = an array of floats - scores,
-        each index corresponding to
-        the doc in the question
-        corpora - its score
+    return = an array of floats - scores,
+            each index corresponding to
+            the doc in the question
+            corpora - its score
 '''
 def get_bm25_rankings(question_corpora, query_doc, question_part):
     parsed_query_doc = [word for word in query_doc.split()]
@@ -89,13 +85,13 @@ def get_bm25_rankings(question_corpora, query_doc, question_part):
 
 
 '''
-A bm25 scorer of the title
-and the body of a question
-in SO
+    A bm25 scorer of the title
+    and the body of a question
+    in SO
 
-params = question corpora, query
+    params = question corpora, query
 
-return = scores
+    return = scores
 '''
 def get_bm25_combined(question_corpora, query_doc):
     scores_body = get_bm25_rankings(question_corpora, query_doc, "body")
@@ -104,14 +100,14 @@ def get_bm25_combined(question_corpora, query_doc):
 
 
 '''
-Sort the array of documents
-based on their BM25 score
+    Sort the array of documents
+    based on their BM25 score
 
-params = the array of bm25 scores,
-         the document corpora array
+    params = the array of bm25 scores,
+             the document corpora array
 
-return = the sorted document
-         corpora array
+    return = the sorted document
+             corpora array
 '''
 def get_relevancy_sorted_docs(rankings, documents):
     print(max(rankings))
@@ -120,23 +116,6 @@ def get_relevancy_sorted_docs(rankings, documents):
     return [documents[index_rank[0]] for index_rank in index_rank_array]
 
 
-def extract_possible_answers(relevant_docs, num_answers):
-    passages = []
-    for doc in relevant_docs:
-        for answer in doc["answers"]:
-            if len(passages) == num_answers:
-                return passages
-            passages = passages + split_to_passages(answer["body"])
-
-    #shuffle(passages)
-    return passages
-
-def are_entities_legitimate(entities, question):
-    for entity in entities:
-        if not (entity[0] in question):
-            return False
-    return True
-
 def get_answer(request):
     question = request.GET['question']
     entities = eval(request.GET['entities'])
@@ -144,44 +123,35 @@ def get_answer(request):
     confidence = request.GET['confidence']
     num_answers = int(request.GET['num_answers'])
 
-    print(entities)
     '''
-        The information extracted should be sufficient
-        enough to formulate a generic_query. Also, the
-        exctracted information should be relevant to
-        the question.
+        The information extracted (entities) should be sufficient
+        enough to formulate a generic_query. Also, the (entities)
+        exctracted information should be relevant to the question.
     '''
     generic_query = " ".join(entity[0] for entity in entities)
     if (len(generic_query.split()) >= settings.MINIMAL_NUMBER_OF_ENTITIES) and not (are_entities_legitimate(entities, question)):
         generic_query = question
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
-    ''' '''
+
     json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
-    print(len(json_search_data['items']))
-    if len(json_search_data['items']) == 0:
+    question_corpora = [item for item in json_search_data['items'] if "answers" in item and len(item['answers']) > 0 ]
+    if len(json_search_data['items']) == 0 or len(question_corpora) == 0:
         json_answer_response = {
                                 'passages' : "['Cannot find and answer']",
                                 'query'    : str(generic_query)
         }
         return JsonResponse(json_answer_response)
 
-    max_score = 0
-
-    passages = []
-    question_corpora = []
-
-    for item in json_search_data['items']:
-        if "answers" in item and len(item['answers']) > 0:
-            question_corpora.append(item)
-
-
+    '''
+        Perform question matching and append the answers
+        based on question to question relevancy -
+        answers from the most relevant questions are
+        first in the array.
+    '''
                                                  #question
     scores = get_bm25_combined(question_corpora, generic_query)
-    print(scores)
-    relevant_docs = get_relevancy_sorted_docs(scores, question_corpora)
-    print(len(relevant_docs))
-    print([doc["title"] for doc in relevant_docs])
+    relevant_docs = get_relevancy_sorted_docs(scores, question_corpora); print([doc["title"] for doc in relevant_docs])
     passages = extract_possible_answers(relevant_docs, num_answers)
 
     json_answer_response = {
@@ -197,4 +167,4 @@ def update_training_data_negative(request):
     return HttpResponse(message)
 
 def update_training_data_positive(request):
-    return HttpResponse("Successfully updated positive!")
+    return HttpResponse(str(settings.BASE_DIR))
