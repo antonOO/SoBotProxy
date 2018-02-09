@@ -122,6 +122,7 @@ def get_answer(request):
     intent = request.GET['intent']
     confidence = request.GET['confidence']
     num_answers = int(request.GET['num_answers'])
+    divergent_flag = eval(request.GET['divergent_flag'])
 
     '''
         The information extracted (entities) should be sufficient
@@ -164,7 +165,9 @@ def get_answer(request):
     '''
 
     relevant_docs = get_relevancy_sorted_docs(scores, question_corpora); print([doc["title"] for doc in relevant_docs])
-    passages = extract_possible_answers(relevant_docs, num_answers)
+
+    answer_proc = AnswerPocessor(divergent_flag)
+    passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
     json_answer_response = {
                             'passages' : str(passages),
