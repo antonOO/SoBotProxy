@@ -1,4 +1,3 @@
-
 class AnswerPocessor():
 
     def __init__(self, divergent_flag):

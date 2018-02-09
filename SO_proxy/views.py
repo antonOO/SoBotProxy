@@ -10,6 +10,8 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 from random import shuffle
 from .answer_processor import *
+from .answer_query_scaler import AnswerQueryScaler
+from .models import TrainingData
 
 '''
     Get the search data from SO
@@ -178,8 +180,19 @@ def get_answer(request):
 
 
 def update_training_data_negative(request):
-    message = request.GET.get('query')
-    return HttpResponse(message)
+    query = request.GET['query']
+    answer = request.GET['answer']
+    print(query)
+    aqs = AnswerQueryScaler(answer, query)
+    trainingData = TrainingData(exact_match = aqs.get_exact_match(), label = -1)
+    trainingData.save()
+    return HttpResponse("Successfull update!")
 
 def update_training_data_positive(request):
-    return HttpResponse(str(settings.BASE_DIR))
+    query = request.GET['query']
+    answer = request.GET['answer']
+    print(query)
+    aqs = AnswerQueryScaler(answer, query)
+    trainingData = TrainingData(exact_match = aqs.get_exact_match(), label = 1)
+    trainingData.save()
+    return HttpResponse("Successfull update!")
