@@ -184,6 +184,8 @@ def update_training_data_negative(request):
     answer = request.GET['answer']
     print(query)
     aqs = AnswerQueryScaler(answer, query)
+    print(aqs.has_code)
+    print(aqs.tagme_relatedness())
     trainingData = TrainingData(exact_match = aqs.get_exact_match(), label = -1)
     trainingData.save()
     return HttpResponse("Successfull update!")
