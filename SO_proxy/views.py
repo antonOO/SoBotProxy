@@ -138,10 +138,18 @@ def get_answer(request):
 
 
     json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
+    
+    if 'items' not in json_search_data:
+        json_answer_response = {
+                                'passages' : "[('Cannot find an answer', 'none')]",
+                                'query'    : str(generic_query)
+        }
+        return JsonResponse(json_answer_response)
+
     question_corpora = [item for item in json_search_data['items'] if "answers" in item and len(item['answers']) > 0 ]
     if len(json_search_data['items']) == 0 or len(question_corpora) == 0:
         json_answer_response = {
-                                'passages' : "['Cannot find and answer']",
+                                'passages' : "[('Cannot find an answer', 'none')]",
                                 'query'    : str(generic_query)
         }
         return JsonResponse(json_answer_response)
@@ -172,7 +180,7 @@ def get_answer(request):
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
     json_answer_response = {
-                            'passages' : str(passages),
+                            'passages' : str(passages),  #tuple (text, link)
                             'query'    : str(generic_query)
     }
 
@@ -182,19 +190,27 @@ def get_answer(request):
 def update_training_data_negative(request):
     query = request.GET['query']
     answer = request.GET['answer']
-    print(query)
     aqs = AnswerQueryScaler(answer, query)
-    print(aqs.has_code)
-    print(aqs.tagme_relatedness())
-    trainingData = TrainingData(exact_match = aqs.get_exact_match(), label = -1)
+
+    trainingData = TrainingData(exact_match = aqs.get_exact_match(),
+                                term_overlap = aqs.term_overlap_over_length(),
+                                answer_length = aqs.answer_length(),
+                                semantic_score = aqs.tagme_relatedness(),
+                                has_code = aqs.has_code,
+                                label = -1)
     trainingData.save()
     return HttpResponse("Successfull update!")
 
 def update_training_data_positive(request):
     query = request.GET['query']
     answer = request.GET['answer']
-    print(query)
     aqs = AnswerQueryScaler(answer, query)
-    trainingData = TrainingData(exact_match = aqs.get_exact_match(), label = 1)
+
+    trainingData = TrainingData(exact_match = aqs.get_exact_match(),
+                                term_overlap = aqs.term_overlap_over_length(),
+                                answer_length = aqs.answer_length(),
+                                semantic_score = aqs.tagme_relatedness(),
+                                has_code = aqs.has_code,
+                                label = -1)
     trainingData.save()
     return HttpResponse("Successfull update!")
