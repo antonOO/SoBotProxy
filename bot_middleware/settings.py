@@ -127,6 +127,7 @@ MULTIPLE_TAGS_FILTER = "https://api.stackexchange.com/2.2/questions?pagesize=100
 SIMILAR_QUESTION_FILTER  = "https://api.stackexchange.com/2.2/similar?pagesize=100&order=desc&sort=relevance&tagged=%(tags)s&title=%(intitle)s&site=stackoverflow&filter=!)5cCAfQ89FJ*hTGUy)0qNg)rgS6L"
 
 MINIMAL_NUMBER_OF_ENTITIES = 3
+MINIMUM_INFORMATION_ACQUIRED = 0.75
 
 TAGME_TAG_URI = "https://tagme.d4science.org/tagme/tag?lang=en&include_abstract=true&include_categories=true&gcube-token=71dc7ebc-edbc-40b5-82ec-ce4aa096004d-843339462&text=%(text)s"
 TAGME_RELATEDNESS_URI = "https://tagme.d4science.org/tagme/rel?gcube-token=71dc7ebc-edbc-40b5-82ec-ce4aa096004d-843339462&%(ids)s"

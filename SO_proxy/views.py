@@ -12,6 +12,10 @@ from random import shuffle
 from .answer_processor import *
 from .answer_query_scaler import AnswerQueryScaler
 from .models import TrainingData
+from .logging_initializer import *
+
+
+initialize_logger()
 
 '''
     Get the search data from SO
@@ -53,11 +57,13 @@ def strip_text(text):
 
     return = boolean flag
 '''
+'''
 def are_entities_legitimate(entities, question):
     for entity in entities:
         if not (entity[0] in question):
             return False
     return True
+'''
 
 '''
     Get bm25 rankings between a SO
@@ -89,7 +95,8 @@ def get_bm25_rankings(question_corpora, query_doc, question_part):
 '''
     A bm25 scorer of the title
     and the body of a question
-    in SO
+    in SO; title is 1.5 more
+    relevant
 
     params = question corpora, query
 
@@ -118,6 +125,25 @@ def get_relevancy_sorted_docs(rankings, documents):
     return [documents[index_rank[0]] for index_rank in index_rank_array]
 
 
+'''
+    Prepares the answer response
+
+    params = answer texts with their links as
+             an array to string, query to string,
+             intent string
+
+    return = the json encapsulation of data above
+'''
+def prepare_response(passage_link_tuples, query, intent):
+    json_answer_response = {
+                            'passages' : passage_link_tuples,
+                            'query'    : query,
+                            'intent'   : intent
+    }
+
+    return json_answer_response
+
+
 def get_answer(request):
     question = request.GET['question']
     entities = eval(request.GET['entities'])
@@ -126,33 +152,32 @@ def get_answer(request):
     num_answers = int(request.GET['num_answers'])
     divergent_flag = eval(request.GET['divergent_flag'])
 
+    print(question)
+
+
     '''
         The information extracted (entities) should be sufficient
         enough to formulate a generic_query. Also, the (entities)
         exctracted information should be relevant to the question.
     '''
     generic_query = " ".join(entity[0] for entity in entities)
-    if (len(generic_query.split()) >= settings.MINIMAL_NUMBER_OF_ENTITIES) and not (are_entities_legitimate(entities, question)):
+    print(generic_query)
+
+    if ((len(generic_query.split()) < settings.MINIMAL_NUMBER_OF_ENTITIES) or #not (are_entities_legitimate(entities, question)
+        settings.MINIMUM_INFORMATION_ACQUIRED > float(len(generic_query.split())/len(question.split()))):
         generic_query = question
+        logging.warning("Matching against stopword removed query!")
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
 
     json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
-    
+
     if 'items' not in json_search_data:
-        json_answer_response = {
-                                'passages' : "[('Cannot find an answer', 'none')]",
-                                'query'    : str(generic_query)
-        }
-        return JsonResponse(json_answer_response)
+        return JsonResponse(prepare_response( "[('Cannot find an answer', 'none')]", str(generic_query), intent))
 
     question_corpora = [item for item in json_search_data['items'] if "answers" in item and len(item['answers']) > 0 ]
     if len(json_search_data['items']) == 0 or len(question_corpora) == 0:
-        json_answer_response = {
-                                'passages' : "[('Cannot find an answer', 'none')]",
-                                'query'    : str(generic_query)
-        }
-        return JsonResponse(json_answer_response)
+        return JsonResponse(prepare_response( "[('Cannot find an answer', 'none')]", str(generic_query), intent))
 
     '''
         Perform question matching and append the answers
@@ -160,31 +185,31 @@ def get_answer(request):
         answers from the most relevant questions are
         first in the array.
     '''
-    scores = get_bm25_combined(question_corpora, generic_query)
-    question_scores = get_bm25_combined(question_corpora, question)
 
-    '''
-        There might be more similar documents to the
-        exact question itself, rather than the
-        generic query.
-    '''
-    '''
-    if max(question_scores) > max(scores):
-        scores = question_scores
-        generic_query = question
-    '''
+    scores = get_bm25_combined(question_corpora, generic_query)
+    if question != generic_query and len(question.split()) == len(generic_query.split()):
+        question_scores = get_bm25_combined(question_corpora, question)
+
+        print(str(max(scores)) + " " + str(max(question_scores)))
+
+        '''
+            There might be more similar documents to the
+            exact question itself, rather than the
+            generic query.
+        '''
+
+        if max(question_scores) > max(scores):
+            scores = question_scores
+            generic_query = question
+            logging.warning("Matching against stopword removed query - more similar questions to parsed question!")
+
 
     relevant_docs = get_relevancy_sorted_docs(scores, question_corpora); print([doc["title"] for doc in relevant_docs])
 
     answer_proc = AnswerPocessor(divergent_flag)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
-    json_answer_response = {
-                            'passages' : str(passages),  #tuple (text, link)
-                            'query'    : str(generic_query)
-    }
-
-    return JsonResponse(json_answer_response)
+    return JsonResponse(prepare_response(str(passages), str(generic_query), intent))
 
 
 def update_training_data_negative(request):
