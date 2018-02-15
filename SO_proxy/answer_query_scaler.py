@@ -6,7 +6,7 @@ import itertools
 
 class AnswerQueryScaler():
 
-    def __init__(self, answer, query):
+    def __init__(self, answer, query, intent):
         code_block = re.compile('```(?s).*```')
         m = code_block.search(answer)
         self.has_code = False
@@ -14,6 +14,7 @@ class AnswerQueryScaler():
             self.has_code = True
         self.answer = code_block.sub("", answer)
         self.query = query
+        self.intent = intent
 
     def __get_tagged_page_ids(self, part):
         tag_url = (settings.TAGME_TAG_URI % { "text" : part })
@@ -62,3 +63,10 @@ class AnswerQueryScaler():
             return score/couples_found
         else:
             return 0
+
+    def intent_score(self):
+        return { "programming_factoid" : 1,
+          "programming_procedure" : 2,
+          "programming_cause_effect" : 3,
+          "random" : 0
+         }[self.intent]

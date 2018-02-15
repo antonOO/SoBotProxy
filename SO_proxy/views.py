@@ -49,23 +49,6 @@ def strip_text(text):
     return re.sub('[^0-9a-zA-Z ]+', "", text)
 
 '''
-    Check if ML extracted entities
-    match coherently the question
-
-    params = list String ents,
-             question
-
-    return = boolean flag
-'''
-'''
-def are_entities_legitimate(entities, question):
-    for entity in entities:
-        if not (entity[0] in question):
-            return False
-    return True
-'''
-
-'''
     Get bm25 rankings between a SO
     question and a query, depending
     on a question corpora
@@ -119,10 +102,9 @@ def get_bm25_combined(question_corpora, query_doc):
              corpora array
 '''
 def get_relevancy_sorted_docs(rankings, documents):
-    print(max(rankings))
     index_rank_array = [(index, rank) for index, rank in enumerate(rankings)]
     index_rank_array.sort(key=lambda index_rank: index_rank[1], reverse=True)
-    return [documents[index_rank[0]] for index_rank in index_rank_array]
+    return [index_rank[1] for index_rank in index_rank_array],[documents[index_rank[0]] for index_rank in index_rank_array]
 
 
 '''
@@ -204,9 +186,8 @@ def get_answer(request):
             logging.warning("Matching against stopword removed query - more similar questions to parsed question!")
 
 
-    relevant_docs = get_relevancy_sorted_docs(scores, question_corpora); print([doc["title"] for doc in relevant_docs])
-
-    answer_proc = AnswerPocessor(divergent_flag)
+    scores, relevant_docs = get_relevancy_sorted_docs(scores, question_corpora); print([doc["title"] for doc in relevant_docs])
+    answer_proc = AnswerPocessor(divergent_flag, scores)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
     return JsonResponse(prepare_response(str(passages), str(generic_query), intent))
@@ -215,13 +196,18 @@ def get_answer(request):
 def update_training_data_negative(request):
     query = request.GET['query']
     answer = request.GET['answer']
-    aqs = AnswerQueryScaler(answer, query)
+    intent = request.GET['intent']
+    bm25_score = request.GET['bm25_score']
 
+    aqs = AnswerQueryScaler(answer, query, intent)
+    print(aqs.intent_score())
     trainingData = TrainingData(exact_match = aqs.get_exact_match(),
                                 term_overlap = aqs.term_overlap_over_length(),
                                 answer_length = aqs.answer_length(),
                                 semantic_score = aqs.tagme_relatedness(),
                                 has_code = aqs.has_code,
+                                bm25_qrelevance = float(bm25_score),
+                                intent = aqs.intent_score(),
                                 label = -1)
     trainingData.save()
     return HttpResponse("Successfull update!")
@@ -229,13 +215,18 @@ def update_training_data_negative(request):
 def update_training_data_positive(request):
     query = request.GET['query']
     answer = request.GET['answer']
-    aqs = AnswerQueryScaler(answer, query)
+    intent = request.GET['intent']
+    bm25_score = request.GET['bm25_score']
+
+    aqs = AnswerQueryScaler(answer, query, intent)
 
     trainingData = TrainingData(exact_match = aqs.get_exact_match(),
                                 term_overlap = aqs.term_overlap_over_length(),
                                 answer_length = aqs.answer_length(),
                                 semantic_score = aqs.tagme_relatedness(),
                                 has_code = aqs.has_code,
-                                label = -1)
+                                bm25_qrelevance = float(bm25_score),
+                                intent = aqs.intent_score(),
+                                label = 1)
     trainingData.save()
     return HttpResponse("Successfull update!")

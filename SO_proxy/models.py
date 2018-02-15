@@ -6,4 +6,6 @@ class TrainingData(models.Model):
     answer_length = models.FloatField(blank=True, default=0)
     semantic_score = models.FloatField(blank=True, default=0)
     has_code = models.IntegerField(blank=True, default=0)
+    intent = models.IntegerField(blank=True, default=0)
+    bm25_qrelevance = models.FloatField(blank=True, default=0)
     label = models.IntegerField(blank=True, default=0)
