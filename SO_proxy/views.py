@@ -125,7 +125,6 @@ def prepare_response(passage_link_tuples, query, intent):
 
     return json_answer_response
 
-
 def get_answer(request):
     question = request.GET['question']
     entities = eval(request.GET['entities'])
@@ -133,6 +132,7 @@ def get_answer(request):
     confidence = request.GET['confidence']
     num_answers = int(request.GET['num_answers'])
     divergent_flag = eval(request.GET['divergent_flag'])
+    direct_search_flag = eval(request.GET['direct_search_flag'])
 
     print(question)
 
@@ -146,20 +146,21 @@ def get_answer(request):
     print(generic_query)
 
     if ((len(generic_query.split()) < settings.MINIMAL_NUMBER_OF_ENTITIES) or #not (are_entities_legitimate(entities, question)
-        settings.MINIMUM_INFORMATION_ACQUIRED > float(len(generic_query.split())/len(question.split()))):
+        settings.MINIMUM_INFORMATION_ACQUIRED > float(len(generic_query.split())/len(question.split())) or
+        direct_search_flag):
         generic_query = question
-        logging.warning("Matching against stopword removed query!")
+        logging.warning("Matching against stopword removed question!")
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
 
     json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
 
     if 'items' not in json_search_data:
-        return JsonResponse(prepare_response( "[('Cannot find an answer', 'none')]", str(generic_query), intent))
+        return JsonResponse(prepare_response("['Cannot find an answer']", str(generic_query), intent))
 
     question_corpora = [item for item in json_search_data['items'] if "answers" in item and len(item['answers']) > 0 ]
     if len(json_search_data['items']) == 0 or len(question_corpora) == 0:
-        return JsonResponse(prepare_response( "[('Cannot find an answer', 'none')]", str(generic_query), intent))
+        return JsonResponse(prepare_response("['Cannot find an answer']", str(generic_query), intent))
 
     '''
         Perform question matching and append the answers
@@ -185,8 +186,11 @@ def get_answer(request):
             generic_query = question
             logging.warning("Matching against stopword removed query - more similar questions to parsed question!")
 
+    relevant_docs = question_corpora
+    if not direct_search_flag:
+        scores, relevant_docs = get_relevancy_sorted_docs(scores, question_corpora)
 
-    scores, relevant_docs = get_relevancy_sorted_docs(scores, question_corpora); print([doc["title"] for doc in relevant_docs])
+    print([doc["title"] for doc in relevant_docs])
     answer_proc = AnswerPocessor(divergent_flag, scores)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
