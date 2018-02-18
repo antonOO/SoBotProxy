@@ -146,7 +146,7 @@ def get_answer(request):
     print(generic_query)
 
     if ((len(generic_query.split()) < settings.MINIMAL_NUMBER_OF_ENTITIES) or #not (are_entities_legitimate(entities, question)
-        settings.MINIMUM_INFORMATION_ACQUIRED > float(len(generic_query.split())/len(question.split())) or
+        settings.MINIMUM_INFORMATION_ACQUIRED >= float(len(generic_query.split())/len(question.split())) or
         direct_search_flag):
         generic_query = question
         logging.warning("Matching against stopword removed question!")
@@ -202,6 +202,10 @@ def update_training_data_negative(request):
     answer = request.GET['answer']
     intent = request.GET['intent']
     bm25_score = request.GET['bm25_score']
+    qscore = request.GET['qscore']
+    ascore = request.GET['ascore']
+    view_count = request.GET['view_count']
+    is_accepted = request.GET['is_accepted']
 
     aqs = AnswerQueryScaler(answer, query, intent)
     print(aqs.intent_score())
@@ -212,6 +216,10 @@ def update_training_data_negative(request):
                                 has_code = aqs.has_code,
                                 bm25_qrelevance = float(bm25_score),
                                 intent = aqs.intent_score(),
+                                qscore = qscore,
+                                ascore = ascore,
+                                view_count = view_count,
+                                is_accepted_answer = int(eval(is_accepted)),
                                 label = -1)
     trainingData.save()
     return HttpResponse("Successfull update!")
@@ -221,6 +229,10 @@ def update_training_data_positive(request):
     answer = request.GET['answer']
     intent = request.GET['intent']
     bm25_score = request.GET['bm25_score']
+    qscore = request.GET['qscore']
+    ascore = request.GET['ascore']
+    view_count = request.GET['view_count']
+    is_accepted = request.GET['is_accepted']
 
     aqs = AnswerQueryScaler(answer, query, intent)
 
@@ -231,6 +243,10 @@ def update_training_data_positive(request):
                                 has_code = aqs.has_code,
                                 bm25_qrelevance = float(bm25_score),
                                 intent = aqs.intent_score(),
+                                qscore = qscore,
+                                ascore = ascore,
+                                view_count = view_count,
+                                is_accepted_answer = int(eval(is_accepted)),
                                 label = 1)
     trainingData.save()
     return HttpResponse("Successfull update!")

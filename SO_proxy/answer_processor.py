@@ -7,11 +7,19 @@ class AnswerPocessor():
     def extract_possible_answers_conseq(self, relevant_docs, num_answers):
         passages = []
         for doc in relevant_docs:
+
             index = relevant_docs.index(doc)
+            qscore = doc['score']
+            view_count = doc['view_count']
+
             for answer in doc['answers']:
                 if len(passages) == num_answers:
                     return passages
-                passages.append((answer['body'], doc['link'], str(self.scores[index])))
+
+                ascore = answer['score']
+                is_accepted = answer['is_accepted']
+
+                passages.append((answer['body'], doc['link'], str(self.scores[index]), qscore, view_count, ascore, is_accepted))
         return passages
 
     def extract_possible_answers_diverg(self, relevant_docs, num_answers):
@@ -20,12 +28,21 @@ class AnswerPocessor():
         while has_more_answers:
             has_more_answers = False
             for doc in relevant_docs:
+
                 index = relevant_docs.index(doc)
+                qscore = doc['score']
+                view_count = doc['view_count']
+
                 if len(passages) == num_answers:
                     return passages
                 elif len(doc['answers']) > 0:
-                    answer = (doc['answers'].pop(0))['body']
-                    passages.append((answer, doc['link'], str(self.scores[index])))
+
+                    answer = (doc['answers'].pop(0))
+                    answer_body = answer['body']
+                    ascore = answer['score']
+                    is_accepted = answer['is_accepted']
+
+                    passages.append((answer_body, doc['link'], str(self.scores[index]), qscore, view_count, ascore, is_accepted))
                     has_more_answers = True
         return passages
 
