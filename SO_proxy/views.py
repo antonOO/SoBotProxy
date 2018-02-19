@@ -148,7 +148,7 @@ def get_answer(request):
         settings.MINIMUM_INFORMATION_ACQUIRED >= float(len(generic_query.split())/len(question.split())) or
         direct_search_flag):
         generic_query = question
-        logging.log("Matching against stopword removed question!")
+        logging.info("Matching against stopword removed question!")
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
     try:
@@ -185,7 +185,7 @@ def get_answer(request):
         if max(question_scores) > max(scores):
             scores = question_scores
             generic_query = question
-            logging.log("Matching against stopword removed query - more similar questions to parsed question!")
+            logging.info("Matching against stopword removed query - more similar questions to parsed question!")
 
     relevant_docs = question_corpora
     if not direct_search_flag:
