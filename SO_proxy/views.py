@@ -12,10 +12,9 @@ from random import shuffle
 from .answer_processor import *
 from .answer_query_scaler import AnswerQueryScaler
 from .models import TrainingData
-#from .logging_initializer import *
+import logging
 
-
-#initialize_logger()
+logging.basicConfig(level = logging.INFO, format = "%(levelname)s:%(asctime)s:%(message)s")
 
 '''
     Get the search data from SO
@@ -31,7 +30,7 @@ from .models import TrainingData
 '''
 def get_search_data(search_query, programming_terms, intitle = ""):
     url_query = (search_query % {"tags" : programming_terms, "intitle" : intitle})
-    print(url_query)
+    logging.info(url_query)
     response = requests.get(url_query)
     return json.loads(response.text)
 
@@ -137,29 +136,25 @@ def get_answer(request):
     except:
         return JsonResponse(prepare_response("['Wrong input!']", None, None))
 
-
-
     '''
         The information extracted (entities) should be sufficient
         enough to formulate a generic_query. Also, the (entities)
         exctracted information should be relevant to the question.
     '''
     generic_query = " ".join(entity[0] for entity in entities)
-    print(generic_query)
+    logging.info(generic_query)
 
     if ((len(generic_query.split()) < settings.MINIMAL_NUMBER_OF_ENTITIES) or #not (are_entities_legitimate(entities, question)
         settings.MINIMUM_INFORMATION_ACQUIRED >= float(len(generic_query.split())/len(question.split())) or
         direct_search_flag):
         generic_query = question
-        print("Matching against stopword removed question!")
+        logging.log("Matching against stopword removed question!")
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
     try:
         json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
     except:
         return JsonResponse(prepare_response("[SO access error!']", None, None))
-
-    print("SO PASS")
 
     if 'items' not in json_search_data:
         return JsonResponse(prepare_response("['Cannot find an answer']", str(generic_query), intent))
@@ -179,7 +174,7 @@ def get_answer(request):
     if question != generic_query and len(question.split()) == len(generic_query.split()):
         question_scores = get_bm25_combined(question_corpora, question)
 
-        print(str(max(scores)) + " " + str(max(question_scores)))
+        logging.info(str(max(scores)) + " " + str(max(question_scores)))
 
         '''
             There might be more similar documents to the
@@ -190,13 +185,14 @@ def get_answer(request):
         if max(question_scores) > max(scores):
             scores = question_scores
             generic_query = question
-            print("Matching against stopword removed query - more similar questions to parsed question!")
+            logging.log("Matching against stopword removed query - more similar questions to parsed question!")
 
     relevant_docs = question_corpora
     if not direct_search_flag:
         scores, relevant_docs = get_relevancy_sorted_docs(scores, question_corpora)
 
-    print([doc["title"] for doc in relevant_docs])
+    logging.info([doc["title"] for doc in relevant_docs])
+    logging.info(scores)
     answer_proc = AnswerPocessor(divergent_flag, scores)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
@@ -216,7 +212,6 @@ def update_training_data_negative(request):
 
 
     aqs = AnswerQueryScaler(answer, query, intent)
-    print(aqs.intent_score())
     trainingData = TrainingData(exact_match = aqs.get_exact_match(),
                                 term_overlap = aqs.term_overlap_over_length(),
                                 answer_length = aqs.answer_length(),
