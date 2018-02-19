@@ -47,9 +47,12 @@ class AnswerQueryScaler():
         ids_couple_str_arr = [("id=" + str(qid) + " " + str(aid)) for (qid, aid) in itertools.product(query_ids, answer_ids)]
         ids_couple_str = "&".join(ids_couple_str_arr)
 
-        rel_url = (settings.TAGME_RELATEDNESS_URI % { 'ids' : ids_couple_str })
-        response_data = requests.get(rel_url)
-        json_relevancy_data = json.loads(response_data.text)
+        try:
+            rel_url = (settings.TAGME_RELATEDNESS_URI % { 'ids' : ids_couple_str })
+            response_data = requests.get(rel_url)
+            json_relevancy_data = json.loads(response_data.text)
+        except:
+            return -1
 
         score = 0
         couples_found = 0

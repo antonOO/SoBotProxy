@@ -174,7 +174,7 @@ def get_answer(request):
     if question != generic_query and len(question.split()) == len(generic_query.split()):
         question_scores = get_bm25_combined(question_corpora, question)
 
-        logging.info(str(max(scores)) + " " + str(max(question_scores)))
+        logging.debug(str(max(scores)) + " " + str(max(question_scores)))
 
         '''
             There might be more similar documents to the
@@ -191,8 +191,9 @@ def get_answer(request):
     if not direct_search_flag:
         scores, relevant_docs = get_relevancy_sorted_docs(scores, question_corpora)
 
-    logging.info([doc["title"] for doc in relevant_docs])
-    logging.info(scores)
+    logging.debug([doc["title"] for doc in relevant_docs])
+    logging.debug(scores)
+
     answer_proc = AnswerPocessor(divergent_flag, scores)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
@@ -263,3 +264,25 @@ def update_training_data_positive(request):
         return HttpResponse("Successfull update!")
     except:
         return HttpResponse("Answer already exists!")
+
+def poll_data_csv(request):
+    try:
+        training_file = open("training_data.csv", "w")
+        feedbacks = TrainingData.objects.all()
+        for data in feedbacks:
+            training_row = (str(data.label) + "," +
+                            str(data.exact_match) + "," +
+                            str(data.term_overlap) + "," +
+                            str(data.answer_length) + "," +
+                            str(data.semantic_score) + "," +
+                            str(data.has_code) + "," +
+                            str(data.bm25_qrelevance) + "," +
+                            str(data.intent) + "," +
+                            str(data.qscore) + "," +
+                            str(data.ascore) + "," +
+                            str(data.view_count) + "," +
+                            str(data.is_accepted_answer) + "\n")
+            training_file.write(training_row)
+        return HttpResponse("Successfull polling to csv!")
+    except:
+        HttpResponse("Unexpected Database internal error!")

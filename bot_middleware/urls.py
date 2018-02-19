@@ -22,4 +22,5 @@ urlpatterns = [
     url(r'^answer/$', views.get_answer, name='get_answer'),
     url(r'^update_training_data_negative/$', views.update_training_data_negative, name='update_training_data_negative'),
     url(r'^update_training_data_positive/$', views.update_training_data_positive, name='update_training_data_positive'),
+    url(r'^poll_data_csv/$', views.poll_data_csv, name='poll_data_csv'),
 ]
