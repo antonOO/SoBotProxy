@@ -12,10 +12,10 @@ from random import shuffle
 from .answer_processor import *
 from .answer_query_scaler import AnswerQueryScaler
 from .models import TrainingData
-from .logging_initializer import *
+#from .logging_initializer import *
 
 
-initialize_logger()
+#initialize_logger()
 
 '''
     Get the search data from SO
@@ -145,13 +145,13 @@ def get_answer(request):
         exctracted information should be relevant to the question.
     '''
     generic_query = " ".join(entity[0] for entity in entities)
-    logging.warning(generic_query)
+    print(generic_query)
 
     if ((len(generic_query.split()) < settings.MINIMAL_NUMBER_OF_ENTITIES) or #not (are_entities_legitimate(entities, question)
         settings.MINIMUM_INFORMATION_ACQUIRED >= float(len(generic_query.split())/len(question.split())) or
         direct_search_flag):
         generic_query = question
-        logging.warning("Matching against stopword removed question!")
+        print("Matching against stopword removed question!")
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
     try:
@@ -159,7 +159,7 @@ def get_answer(request):
     except:
         return JsonResponse(prepare_response("[SO access error!']", None, None))
 
-    logging.warning("SO PASS")
+    print("SO PASS")
 
     if 'items' not in json_search_data:
         return JsonResponse(prepare_response("['Cannot find an answer']", str(generic_query), intent))
@@ -190,13 +190,13 @@ def get_answer(request):
         if max(question_scores) > max(scores):
             scores = question_scores
             generic_query = question
-            logging.warning("Matching against stopword removed query - more similar questions to parsed question!")
+            print("Matching against stopword removed query - more similar questions to parsed question!")
 
     relevant_docs = question_corpora
     if not direct_search_flag:
         scores, relevant_docs = get_relevancy_sorted_docs(scores, question_corpora)
 
-    logging.warning([doc["title"] for doc in relevant_docs])
+    print([doc["title"] for doc in relevant_docs])
     answer_proc = AnswerPocessor(divergent_flag, scores)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
