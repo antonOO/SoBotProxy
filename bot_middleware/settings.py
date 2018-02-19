@@ -25,7 +25,7 @@ SECRET_KEY = '-@nqv=368eb7if_9+llcgw661@w*ei(gelj=ud^r4*0l5ph58('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['sobotmid.pythonanywhere.com']
 
 
 # Application definition

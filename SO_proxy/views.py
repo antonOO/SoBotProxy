@@ -154,8 +154,12 @@ def get_answer(request):
         logging.warning("Matching against stopword removed question!")
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
+    try:
+        json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
+    except:
+        return JsonResponse(prepare_response("[SO access error!']", None, None))
 
-    json_search_data = get_search_data(settings.SIMILAR_QUESTION_FILTER, programming_terms, generic_query)
+    logging.warning("SO PASS")
 
     if 'items' not in json_search_data:
         return JsonResponse(prepare_response("['Cannot find an answer']", str(generic_query), intent))
