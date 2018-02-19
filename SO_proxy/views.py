@@ -126,13 +126,17 @@ def prepare_response(passage_link_tuples, query, intent):
     return json_answer_response
 
 def get_answer(request):
-    question = request.GET['question']
-    entities = eval(request.GET['entities'])
-    intent = request.GET['intent']
-    confidence = request.GET['confidence']
-    num_answers = int(request.GET['num_answers'])
-    divergent_flag = eval(request.GET['divergent_flag'])
-    direct_search_flag = eval(request.GET['direct_search_flag'])
+    try:
+        question = request.GET['question']
+        entities = eval(request.GET['entities'])
+        intent = request.GET['intent']
+        confidence = request.GET['confidence']
+        num_answers = int(request.GET['num_answers'])
+        divergent_flag = eval(request.GET['divergent_flag'])
+        direct_search_flag = eval(request.GET['direct_search_flag'])
+    except:
+        return JsonResponse(prepare_response("['Wrong input!']", None, None))
+
 
 
     '''
