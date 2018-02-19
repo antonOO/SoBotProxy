@@ -13,3 +13,4 @@ class TrainingData(models.Model):
     ascore = models.IntegerField(blank=True, default=0)
     is_accepted_answer = models.IntegerField(blank=True, default=0)
     label = models.IntegerField(blank=True, default=0)
+    uid = models.IntegerField(unique=True)

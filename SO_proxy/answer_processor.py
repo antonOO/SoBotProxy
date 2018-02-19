@@ -18,8 +18,9 @@ class AnswerPocessor():
 
                 ascore = answer['score']
                 is_accepted = answer['is_accepted']
+                answer_id = answer['answer_id']
 
-                passages.append((answer['body'], doc['link'], str(self.scores[index]), qscore, view_count, ascore, is_accepted))
+                passages.append((answer['body'], doc['link'], str(self.scores[index]), qscore, view_count, ascore, is_accepted, answer_id))
         return passages
 
     def extract_possible_answers_diverg(self, relevant_docs, num_answers):
@@ -40,9 +41,10 @@ class AnswerPocessor():
                     answer = (doc['answers'].pop(0))
                     answer_body = answer['body']
                     ascore = answer['score']
+                    answer_id = answer['answer_id']
                     is_accepted = answer['is_accepted']
 
-                    passages.append((answer_body, doc['link'], str(self.scores[index]), qscore, view_count, ascore, is_accepted))
+                    passages.append((answer_body, doc['link'], str(self.scores[index]), qscore, view_count, ascore, is_accepted, answer_id))
                     has_more_answers = True
         return passages
 

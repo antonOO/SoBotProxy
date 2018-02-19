@@ -134,8 +134,6 @@ def get_answer(request):
     divergent_flag = eval(request.GET['divergent_flag'])
     direct_search_flag = eval(request.GET['direct_search_flag'])
 
-    print(question)
-
 
     '''
         The information extracted (entities) should be sufficient
@@ -143,7 +141,7 @@ def get_answer(request):
         exctracted information should be relevant to the question.
     '''
     generic_query = " ".join(entity[0] for entity in entities)
-    print(generic_query)
+    logging.warning(generic_query)
 
     if ((len(generic_query.split()) < settings.MINIMAL_NUMBER_OF_ENTITIES) or #not (are_entities_legitimate(entities, question)
         settings.MINIMUM_INFORMATION_ACQUIRED >= float(len(generic_query.split())/len(question.split())) or
@@ -190,7 +188,7 @@ def get_answer(request):
     if not direct_search_flag:
         scores, relevant_docs = get_relevancy_sorted_docs(scores, question_corpora)
 
-    print([doc["title"] for doc in relevant_docs])
+    logging.warning([doc["title"] for doc in relevant_docs])
     answer_proc = AnswerPocessor(divergent_flag, scores)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
 
@@ -206,6 +204,8 @@ def update_training_data_negative(request):
     ascore = request.GET['ascore']
     view_count = request.GET['view_count']
     is_accepted = request.GET['is_accepted']
+    uid = request.GET['uid']
+
 
     aqs = AnswerQueryScaler(answer, query, intent)
     print(aqs.intent_score())
@@ -220,9 +220,13 @@ def update_training_data_negative(request):
                                 ascore = ascore,
                                 view_count = view_count,
                                 is_accepted_answer = int(eval(is_accepted)),
+                                uid = int(uid),
                                 label = -1)
-    trainingData.save()
-    return HttpResponse("Successfull update!")
+    try:
+        trainingData.save()
+        return HttpResponse("Successfull update!")
+    except:
+        return HttpResponse("Answer already exists!")
 
 def update_training_data_positive(request):
     query = request.GET['query']
@@ -233,6 +237,7 @@ def update_training_data_positive(request):
     ascore = request.GET['ascore']
     view_count = request.GET['view_count']
     is_accepted = request.GET['is_accepted']
+    uid = request.GET['uid']
 
     aqs = AnswerQueryScaler(answer, query, intent)
 
@@ -247,6 +252,11 @@ def update_training_data_positive(request):
                                 ascore = ascore,
                                 view_count = view_count,
                                 is_accepted_answer = int(eval(is_accepted)),
+                                uid = int(uid),
                                 label = 1)
-    trainingData.save()
-    return HttpResponse("Successfull update!")
+
+    try:
+        trainingData.save()
+        return HttpResponse("Successfull update!")
+    except:
+        return HttpResponse("Answer already exists!")
