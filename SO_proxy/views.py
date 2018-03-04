@@ -36,7 +36,8 @@ def get_search_data(search_query, programming_terms, intitle = ""):
 
 '''
     Remove unwanted symbols
-    returned by SO
+    returned by SO and lower
+    cases the text.
 
     params = String text
 
@@ -193,6 +194,9 @@ def get_answer(request):
 
     logging.debug([doc["title"] for doc in relevant_docs])
     logging.debug(scores)
+
+    print([doc["title"] for doc in relevant_docs])
+    print(scores)
 
     answer_proc = AnswerPocessor(divergent_flag, scores)
     passages = answer_proc.extract_possible_answers(relevant_docs, num_answers)
