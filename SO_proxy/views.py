@@ -77,10 +77,10 @@ def get_bm25_rankings(question_corpora, query_doc, question_part):
 '''
     A bm25 scorer of the title
     and the body of a question
-    in SO; title is 1.5 more
-    relevant
+    in SO; title is as relevant
+    as the body
 
-    params = question corpora, query
+    params = document corpora, query
 
     return = scores
 '''
@@ -148,7 +148,7 @@ def get_answer(request):
         settings.MINIMUM_INFORMATION_ACQUIRED >= float(len(generic_query.split())/len(question.split())) or
         direct_search_flag):
         generic_query = question
-        logging.info("Matching against stopword removed question!")
+        logging.info("Direct search!")
     programming_terms = "; ".join([entity[0] for entity in entities if "programming" in entity[1]])
 
     try:
