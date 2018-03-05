@@ -2,6 +2,8 @@ from django.test import TestCase
 from .answer_processor import AnswerPocessor
 from .answer_query_scaler import AnswerQueryScaler
 from . import views
+from django.core.urlresolvers import reverse
+
 
 class AnswerPocessorTests(TestCase):
 
@@ -110,11 +112,29 @@ class ProxyTests(TestCase):
                 },
                 {
                     'title' : "Python classes and OOP",
-                    'body' : """Python is a language supporting class hierarchies.
+                    'body' : """Python is a language supporting classes and hierarchies.
                                 OOP in python is a commong practice, even inheritence
                                 is supported. Why isnt this working"""
+                },
+                {
+                    'title' : "Unikernels are the new trend",
+                    'body' : """Unikernels are minimalistic virtual machines,
+                                which are perfect for microservices, ultra secure,
+                                easy to deploy and are super fast. Consider them."""
                 }
               ]
+
+        self.update_training_data = {
+                                        'query' : "query",
+                                        'answer' : "answer",
+                                        'intent' : "programming_procedure",
+                                        'bm25_score' : "5",
+                                        'qscore' : "6",
+                                        'ascore' : "7",
+                                        'view_count' : "8",
+                                        'is_accepted' : "True",
+                                        'uid' : "123"
+                                    }
 
 
     def test_stip_text(self):
@@ -122,8 +142,36 @@ class ProxyTests(TestCase):
 
     def test_get_bm25_ranking(self):
         scores = views.get_bm25_rankings(self.docs, "python classes", "body")
-        self.assertEqual(len(scores), 2)
+        self.assertEqual(len(scores), 3)
+        self.assertEqual(scores[1] > scores[0] and scores[1] > scores[2], True)
 
     def test_get_bm25_combined(self):
         scores = views.get_bm25_combined(self.docs, "python classes")
-        self.assertEqual(len(scores), 2)
+        self.assertEqual(len(scores), 3)
+        self.assertEqual(scores[1] > scores[0] and scores[1] > scores[2], True)
+
+    def test_relevancy_sorted_docs(self):
+        scores = views.get_bm25_combined(self.docs, "python classes")
+        scores, docs = views.get_relevancy_sorted_docs(scores, self.docs)
+        self.assertEqual(docs[0]['title'], "Python classes and OOP")
+        self.assertEqual(scores[0] > scores[1] and scores[0] > scores[2], True)
+
+    def test_update_training_data_positive(self):
+        response = self.client.get(reverse('update_training_data_positive'), self.update_training_data)
+        self.assertEqual("Successfull" in str(response.content), True)
+        response = self.client.get(reverse('update_training_data_positive'), self.update_training_data)
+        self.assertEqual("already exists" in str(response.content), True)
+
+    def test_update_training_data_negative(self):
+        response = self.client.get(reverse('update_training_data_negative'), self.update_training_data)
+        self.assertEqual("Successfull" in str(response.content), True)
+        response = self.client.get(reverse('update_training_data_negative'), self.update_training_data)
+        self.assertEqual("already exists" in str(response.content), True)
+
+    def test_poll_data_csv(self):
+        response = self.client.get(reverse('poll_data_csv'))
+        self.assertEqual("Successfull" in str(response.content), True)
+
+    def test_get_answer(self):
+        response = self.client.get(reverse('get_answer'))
+        self.assertEqual("Wrong input" in str(response.content), True)

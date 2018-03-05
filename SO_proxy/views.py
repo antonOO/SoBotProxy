@@ -98,7 +98,8 @@ def get_bm25_combined(question_corpora, query_doc):
     params = the array of bm25 scores,
              the document corpora array
 
-    return = the sorted document
+    return = the sorted rankings,
+             the sorted document
              corpora array
 '''
 def get_relevancy_sorted_docs(rankings, documents):
