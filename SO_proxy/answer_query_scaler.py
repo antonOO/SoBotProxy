@@ -12,8 +12,8 @@ class AnswerQueryScaler():
         self.has_code = False
         if m:
             self.has_code = True
-        self.answer = code_block.sub("", answer)
-        self.query = query
+        self.answer = (code_block.sub("", answer)).lower()
+        self.query = query.lower()
         self.intent = intent
 
     def __get_tagged_page_ids(self, part):
